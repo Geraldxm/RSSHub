@@ -41,37 +41,30 @@ async function handler() {
         image: item.coverImg,
     }));
 
+    // 获取全文
+    const fullTextApi = 'https://api-we.foodtalks.cn/news/news/{id}?language=ZH';
+
+    const items = await Promise.all(
+        list.map(async (item) => {
+            const response = await ofetch(fullTextApi.replace('{id}', item.id), {
+                headers: {
+                    'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,zh-TW;q=0.5',
+                    referrer: 'https://www.foodtalks.cn/',
+                    method: 'GET',
+                    mode: 'cors',
+                    credentials: 'omit',
+                },
+            });
+            item.description = response.data.content;
+            return item;
+        })
+    );
+
     // Data
     return {
         title: namespace.name,
         description: namespace.description,
         link: namespace.url,
-        item: list,
+        item: items,
     };
 }
-
-/*
-record in records:
-{
-    id: 54596,
-    title: '好望水照顾系列上新枸杞水；喜茶推
-出补水纤体瓶 | 创新周报',
-    language: null,
-    coverImg: 'https://static.foodtalks.cn/image/post/43f2836e88d034c850e85eb10bb78dd5.png',
-    summary: '我们每周将为您整理献上本周内食
-品行业动态和最值得关注的资讯。',
-    sourceType: 1,
-    sourceId: 7632,
-    sourceName: 'FBIF食品饮料创新',
-    author: '',
-    publishTime: '2024-11-25 17:52:01',
-    parentTagCode: 'exclusives',
-    tagCode: 'weekly',
-    seoTitle: '好望水照顾系列上新枸杞水；喜茶
-推出补水纤体瓶 | 创新周报-FoodTalks全球食品资
-讯',
-    seoKeywords: '好望水,喜茶,补水纤体瓶',
-    score: null,
-    status: null
-  },
-*/
