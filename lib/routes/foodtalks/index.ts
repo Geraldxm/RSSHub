@@ -31,7 +31,7 @@ async function handler() {
     });
     const records = response.data.records;
 
-    // 将records首先转换为简单list
+    // 获取除全为外的内容
     const list = records.map((item) => ({
         title: item.title,
         pubDate: new Date(item.publishTime),
@@ -60,7 +60,7 @@ async function handler() {
         })
     );
 
-    // Data
+    // 返回一个 Data 对象
     return {
         title: namespace.name,
         description: namespace.description,
