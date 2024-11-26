@@ -17,7 +17,6 @@ export const route: Route = {
     url: 'www.foodtalks.cn',
 };
 
-// handler should return a Data object
 async function handler() {
     const url = `https://api-we.foodtalks.cn/news/news/page?current=1&size=15&isLatest=1&language=ZH`;
     const response = await ofetch(url, {
