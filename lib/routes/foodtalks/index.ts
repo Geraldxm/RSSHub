@@ -35,7 +35,8 @@ async function handler() {
         title: item.title,
         pubDate: new Date(item.publishTime),
         link: `https://www.foodtalks.cn/news/${item.id}`,
-        author: item.sourceName,
+        category: item.parentTagCode === 'category' ? item.tagCode : item.parentTagCode,
+        author: item.author === null ? item.sourceName : item.author,
         id: item.id,
         image: item.coverImg,
     }));
@@ -43,6 +44,7 @@ async function handler() {
     // 获取全文
     const fullTextApi = 'https://api-we.foodtalks.cn/news/news/{id}?language=ZH';
 
+    // 每个item是一个 DataItem
     const items = await Promise.all(
         list.map(async (item) => {
             const response = await ofetch(fullTextApi.replace('{id}', item.id), {
@@ -59,11 +61,12 @@ async function handler() {
         })
     );
 
-    // 返回一个 Data 对象
+    // 返回一个 Data
     return {
         title: namespace.name,
         description: namespace.description,
         link: namespace.url,
         item: items,
+        image: 'https://www.foodtalks.cn/static/img/news-site-logo.7aaa5463.svg',
     };
 }
