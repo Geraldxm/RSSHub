@@ -1,5 +1,6 @@
 import { Route } from '@/types';
 import ofetch from '@/utils/ofetch';
+import cache from '@/utils/cache'; // 导入缓存工具
 import { namespace } from './namespace';
 
 export const route: Route = {
@@ -18,19 +19,16 @@ export const route: Route = {
 };
 
 async function handler() {
-    const url = `https://api-we.foodtalks.cn/news/news/page?current=1&size=15&isLatest=1&language=ZH`;
+    const url = 'https://api-we.foodtalks.cn/news/news/page?current=1&size=15&isLatest=1&language=ZH';
     const response = await ofetch(url, {
         headers: {
-            'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,zh-TW;q=0.5',
             referrer: 'https://www.foodtalks.cn/',
             method: 'GET',
-            mode: 'cors',
-            credentials: 'omit',
         },
     });
     const records = response.data.records;
 
-    // 获取除全为外的内容
+    // 获取除了全文的信息
     const list = records.map((item) => ({
         title: item.title,
         pubDate: new Date(item.publishTime),
@@ -44,28 +42,28 @@ async function handler() {
     // 获取全文
     const fullTextApi = 'https://api-we.foodtalks.cn/news/news/{id}?language=ZH';
 
-    // 每个item是一个 DataItem
+    // 每个item是一个DataItem
     const items = await Promise.all(
-        list.map(async (item) => {
-            const response = await ofetch(fullTextApi.replace('{id}', item.id), {
-                headers: {
-                    'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,zh-TW;q=0.5',
-                    referrer: 'https://www.foodtalks.cn/',
-                    method: 'GET',
-                    mode: 'cors',
-                    credentials: 'omit',
-                },
-            });
-            item.description = response.data.content;
-            return item;
-        })
+        list.map((item) =>
+            cache.tryGet(item.link, async () => {
+                // 尝试从缓存中获取数据
+                const response = await ofetch(fullTextApi.replace('{id}', item.id), {
+                    headers: {
+                        referrer: 'https://www.foodtalks.cn/',
+                        method: 'GET',
+                    },
+                });
+                item.description = response.data.content;
+                return item;
+            })
+        )
     );
 
     // 返回一个 Data
     return {
         title: namespace.name,
         description: namespace.description,
-        link: namespace.url,
+        link: 'https://' + namespace.url,
         item: items,
         image: 'https://www.foodtalks.cn/static/img/news-site-logo.7aaa5463.svg',
     };
